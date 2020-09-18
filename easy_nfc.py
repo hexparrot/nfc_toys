@@ -7,12 +7,14 @@ __email__ = "wdchromium@gmail.com"
 __status__ = "Development"
 
 import nfc
+from collections import namedtuple
 
-TAG_SPECS = {  #defcc size page
-    'NTAG213': (0x12, 128, 32),
-    'NTAG215': (0x3f, 496, 135),
-    'NTAG216': (0x6d, 872, 231),
-    'Ultralight': (0x06, 64, 16),
+Tag_Def = namedtuple('tag_definition', 'cc size pages')
+TAG_SPECS = {
+    'NTAG213': Tag_Def(0x12, 128, 32),
+    'NTAG215': Tag_Def(0x3f, 496, 135),
+    'NTAG216': Tag_Def(0x6d, 872, 231),
+    'Ultralight': Tag_Def(0x06, 64, 16),
 }
 
 class nfc_parser(object):
@@ -98,7 +100,7 @@ class nfc_parser(object):
                 self.pages.append(d.hex()[16:24])
                 self.pages.append(d.hex()[24:32])
         except nfc.tag.tt2.Type2TagCommandError:
-            num_pages = TAG_SPECS[self.tag_type][2]
+            num_pages = TAG_SPECS[self.tag_type].pages
 
             if len(self.pages) > num_pages:
                 self.pages = self.pages[0:num_pages]
@@ -109,7 +111,7 @@ class nfc_parser(object):
 
         retval = bytearray()
 
-        raw = self.raw[0:TAG_SPECS[self.tag_type][2] * 4]
+        raw = self.raw[0:TAG_SPECS[self.tag_type].pages * 4]
         for i in range(4):
             seek = (int(page_addr) * 4) + i
             retval.append(raw[seek])
@@ -118,7 +120,7 @@ class nfc_parser(object):
 
     def dump(self):
         with open('dump.bin', 'wb') as fh:
-            fh.write(self.raw[0:TAG_SPECS[self.tag_type][2] * 4])
+            fh.write(self.raw[0:TAG_SPECS[self.tag_type].pages * 4])
 
     @staticmethod
     def spaced_hex(instr):

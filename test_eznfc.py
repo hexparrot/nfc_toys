@@ -23,7 +23,7 @@ class TestNFCDump(unittest.TestCase):
 
         ni = nfc_parser()
 
-        num_pages = TAG_SPECS[ni.tag_type][2]
+        num_pages = TAG_SPECS[ni.tag_type].pages
         self.assertEqual(len(ni.pages), num_pages)
 
         uid_start = ni.raw[0:3].hex() + ni.raw[4:8].hex()
@@ -111,19 +111,19 @@ class TestNFCDump(unittest.TestCase):
         dumpfile = Path('./dump.bin')
         self.assertTrue(dumpfile.exists())
 
-        num_pages = TAG_SPECS[ni.tag_type][2]
+        num_pages = TAG_SPECS[ni.tag_type].pages
         self.assertEqual(os.stat(dumpfile).st_size, 4 * num_pages)
 
         with open(dumpfile, 'rb') as df:
             raw = df.read()
-        self.assertEqual(bytes(raw), ni.raw[0:TAG_SPECS[ni.tag_type][2] * 4])
+        self.assertEqual(bytes(raw), ni.raw[0:TAG_SPECS[ni.tag_type].pages * 4])
 
     def test_pprint(self):
         ni = nfc_parser(read=False)
         self.assertEqual(len(ni._pprint), 0)
 
         ni = nfc_parser()
-        num_pages = TAG_SPECS[ni.tag_type][2]
+        num_pages = TAG_SPECS[ni.tag_type].pages
         self.assertEqual(len(ni._pprint), num_pages)
 
         for i in range(num_pages):
