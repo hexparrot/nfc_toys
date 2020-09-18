@@ -23,15 +23,13 @@ class nfc_parser(object):
                        interface='usb',
                        target_type='106A'):
 
-        self.raw = bytearray()
-        self.pages = []
-
         if read:
             self.clf = nfc.ContactlessFrontend(interface)
             self.target = self.clf.sense(nfc.clf.RemoteTarget(target_type))
             self.tag = nfc.tag.activate(self.clf, self.target)
-            self.read()
             self.raw = nfc.tag.tt2.Type2TagMemoryReader(self.tag)
+        else:
+            self.raw = bytearray()
 
     def __str__(self):
         retval = []
@@ -60,6 +58,11 @@ class nfc_parser(object):
             return self.tag.signature.hex()
         except AttributeError:
             return None
+
+    @property
+    def pages(self):
+        num_pages = TAG_SPECS[self.tag_type].pages
+        return [self.raw[i*4:i*4 + 4].hex() for i in range(0, num_pages)]
 
     @property
     def static_lockpages(self):
@@ -98,37 +101,15 @@ class nfc_parser(object):
     def pprint(self):
         print('\n'.join(self._pprint))
 
-    def read(self):
-        from itertools import count
-
-        try:
-            for i in count(0,4):
-                d = bytearray(self.tag.read(i)) # tag.read() returns 16 bytes
-                self.pages.append(d.hex()[0:8])
-                self.pages.append(d.hex()[8:16])
-                self.pages.append(d.hex()[16:24])
-                self.pages.append(d.hex()[24:32])
-        except nfc.tag.tt2.Type2TagCommandError:
-            num_pages = TAG_SPECS[self.tag_type].pages
-
-            if len(self.pages) > num_pages:
-                self.pages = self.pages[0:num_pages]
-
     def get_page(self, page_addr):
         if isinstance(page_addr, str) and page_addr[-1] == 'h':
             page_addr = page_addr.rstrip('h')
+        page = int(page_addr)
 
-        retval = bytearray()
-
-        raw = self.raw[0:TAG_SPECS[self.tag_type].pages * 4]
         if self.uid_only:
-            retval = None
+            return None
         else:
-            for i in range(4):
-                seek = (int(page_addr) * 4) + i
-                retval.append(raw[seek])
-
-        return retval
+            return self.raw[page * 4:page * 4 + 4]
 
     def dump(self):
         with open('dump.bin', 'wb') as fh:

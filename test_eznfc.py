@@ -16,11 +16,7 @@ class TestNFCDump(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_read(self):
-        ni = nfc_parser(read=False)
-        self.assertEqual(len(ni.raw), 0)
-        self.assertEqual(len(ni.pages), 0)
-
+    def test_init(self):
         ni = nfc_parser()
 
         if ni.uid_only: #dummy cards with no writable value (uid only)
@@ -60,20 +56,6 @@ class TestNFCDump(unittest.TestCase):
             nfc_parser.spaced_hex('041f06d')
 
     def test_str(self):
-        ni = nfc_parser(read=False)
-        str_rep = str(ni)
-        split = str_rep.split('\n')
-
-        self.assertEqual(split[0], 'Type        :')
-        self.assertEqual(split[1], 'Product     :')
-        self.assertEqual(split[2], 'UID         :')
-        self.assertEqual(split[3], 'Signature   :')
-        self.assertEqual(split[4], 'Static Lock :')
-        self.assertEqual(split[5], 'Dynamic Lock:')
-
-        with self.assertRaises(IndexError): #stuff isnt read yet
-            self.assertEqual(split[6], '')
-
         ni = nfc_parser()
         str_rep = str(ni)
         split = str_rep.split('\n')
@@ -92,9 +74,6 @@ class TestNFCDump(unittest.TestCase):
         self.assertEqual(split[10], dump[3])
 
     def test_static_lockpages(self):
-        ni = nfc_parser(read=False)
-        self.assertEqual(ni.static_lockpages, None)
-
         ni = nfc_parser()
 
         if ni.uid_only:
@@ -103,8 +82,6 @@ class TestNFCDump(unittest.TestCase):
             self.assertEqual(ni.static_lockpages, '00 00')
 
     def test_dynamic_lockpages(self):
-        ni = nfc_parser(read=False)
-        self.assertEqual(ni.dynamic_lockpages, None)
         ni = nfc_parser()
 
         if ni.tag.product == 'NXP NTAG215':
@@ -130,9 +107,6 @@ class TestNFCDump(unittest.TestCase):
         self.assertEqual(bytes(raw), ni.raw[0:TAG_SPECS[ni.tag_type].pages * 4])
 
     def test_pprint(self):
-        ni = nfc_parser(read=False)
-        self.assertEqual(len(ni._pprint), 0)
-
         ni = nfc_parser()
         num_pages = TAG_SPECS[ni.tag_type].pages
         self.assertEqual(len(ni._pprint), num_pages)
@@ -173,9 +147,6 @@ class TestNFCDump(unittest.TestCase):
             self.assertTrue(ni.tag_type, ['NTAG213', 'NTAG215', 'NTAG216'])
 
     def test_uid_only_property(self):
-        ni = nfc_parser(read=False)
-        self.assertIsNone(ni.uid_only)
-
         ni = nfc_parser()
         if ni.tag.type == ni.tag.product:
             self.assertTrue(ni.uid_only)
