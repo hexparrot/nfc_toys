@@ -36,15 +36,15 @@ class nfc_parser(object):
     def __str__(self):
         retval = []
         try:
-            retval.append('Type:      ' + self.tag.type)
-            retval.append('Product:   ' + self.tag.product)
-            retval.append('UID:       ' + self.uid)
-            retval.append('Signature: ' + str(self.signature))
-            retval.append('Static Lock:  ' + str(self.static_lockpages))
+            retval.append('Type        : ' + self.tag.type)
+            retval.append('Product     : ' + self.tag.product)
+            retval.append('UID         : ' + self.uid)
+            retval.append('Signature   : ' + str(self.signature))
+            retval.append('Static Lock : ' + str(self.static_lockpages))
             retval.append('Dynamic Lock: ' + str(self.dynamic_lockpages))
         except AttributeError:
-            return '\n'.join(['Type:','Product:','UID:','Signature:',
-                              'Static Lock:', 'Dynamic Lock:'])
+            return '\n'.join([p.ljust(12, ' ') + ':' for p in 
+                ['Type','Product','UID','Signature', 'Static Lock', 'Dynamic Lock']])
 
         retval.append('')
         retval.extend(self.tag.dump()[0:4])

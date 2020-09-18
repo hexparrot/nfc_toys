@@ -64,11 +64,11 @@ class TestNFCDump(unittest.TestCase):
         str_rep = str(ni)
         split = str_rep.split('\n')
 
-        self.assertEqual(split[0], 'Type:')
-        self.assertEqual(split[1], 'Product:')
-        self.assertEqual(split[2], 'UID:')
-        self.assertEqual(split[3], 'Signature:')
-        self.assertEqual(split[4], 'Static Lock:')
+        self.assertEqual(split[0], 'Type        :')
+        self.assertEqual(split[1], 'Product     :')
+        self.assertEqual(split[2], 'UID         :')
+        self.assertEqual(split[3], 'Signature   :')
+        self.assertEqual(split[4], 'Static Lock :')
         self.assertEqual(split[5], 'Dynamic Lock:')
 
         with self.assertRaises(IndexError): #stuff isnt read yet
@@ -77,11 +77,11 @@ class TestNFCDump(unittest.TestCase):
         ni = nfc_parser()
         str_rep = str(ni)
         split = str_rep.split('\n')
-        self.assertEqual(split[0], 'Type:      {0}'.format(ni.tag.type))
-        self.assertEqual(split[1], 'Product:   {0}'.format(ni.tag.product))
-        self.assertEqual(split[2], 'UID:       {0}'.format(ni.uid))
-        self.assertEqual(split[3], 'Signature: {0}'.format(str(ni.signature)))
-        self.assertEqual(split[4], 'Static Lock:  {0}'.format(ni.static_lockpages or str(None)))
+        self.assertEqual(split[0], 'Type        : {0}'.format(ni.tag.type))
+        self.assertEqual(split[1], 'Product     : {0}'.format(ni.tag.product))
+        self.assertEqual(split[2], 'UID         : {0}'.format(ni.uid))
+        self.assertEqual(split[3], 'Signature   : {0}'.format(str(ni.signature)))
+        self.assertEqual(split[4], 'Static Lock : {0}'.format(ni.static_lockpages or str(None)))
         self.assertEqual(split[5], 'Dynamic Lock: {0}'.format(ni.dynamic_lockpages or str(None)))
 
         dump = ni.tag.dump()
