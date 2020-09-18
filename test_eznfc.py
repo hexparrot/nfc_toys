@@ -23,18 +23,28 @@ class TestNFCDump(unittest.TestCase):
 
         ni = nfc_parser()
 
-        num_pages = TAG_SPECS[ni.tag_type].pages
-        self.assertEqual(len(ni.pages), num_pages)
+        if ni.tag.type == ni.tag.product:
+            #dummy cards with no writable value (id only)
+            import nfc
+            with self.assertRaises(nfc.tag.tt2.Type2TagCommandError):
+                uid_start = ni.raw[0:3].hex() + ni.raw[4:8].hex()
+        else:
+            num_pages = TAG_SPECS[ni.tag_type].pages
+            self.assertEqual(len(ni.pages), num_pages)
 
-        uid_start = ni.raw[0:3].hex() + ni.raw[4:8].hex()
-        self.assertEqual(uid_start, ni.uid)
-        
-        self.assertEqual(nfc_parser.spaced_hex(uid_start),
-                         nfc_parser.spaced_hex(ni.uid))
+            uid_start = ni.raw[0:3].hex() + ni.raw[4:8].hex()
+            self.assertEqual(uid_start, ni.uid)
+            
+            self.assertEqual(nfc_parser.spaced_hex(uid_start),
+                             nfc_parser.spaced_hex(ni.uid))
 
     def test_get_uid(self):
         ni = nfc_parser()
-        self.assertEqual(len(ni.uid), 14)
+        if ni.tag.type == ni.tag.product:
+            #dummy cards with no writable value (id only)
+            self.assertEqual(len(ni.uid), 8)
+        else:
+            self.assertEqual(len(ni.uid), 14)
 
     def test_get_signature(self):
         ni = nfc_parser()
@@ -75,21 +85,32 @@ class TestNFCDump(unittest.TestCase):
         else:
             self.assertEqual(split[3], 'Signature: {0}'.format('None'))
 
-        self.assertEqual(split[4], 'Static Lock:  {0}'.format(ni.static_lockpages))
-        self.assertEqual(split[5], 'Dynamic Lock: {0}'.format(ni.dynamic_lockpages or str(None)))
+        if ni.tag.type == ni.tag.product:
+            #dummy cards with no writable value (id only)
+            with self.assertRaises(IndexError): #stuff isnt read yet
+                self.assertEqual(split[4], '')
+        else:
+            self.assertEqual(split[4], 'Static Lock:  {0}'.format(ni.static_lockpages))
+            self.assertEqual(split[5], 'Dynamic Lock: {0}'.format(ni.dynamic_lockpages or str(None)))
 
-        dump = ni.tag.dump()
-        self.assertEqual(split[6], '')
-        self.assertEqual(split[7], dump[0])
-        self.assertEqual(split[8], dump[1])
-        self.assertEqual(split[9], dump[2])
-        self.assertEqual(split[10], dump[3])
+            dump = ni.tag.dump()
+            self.assertEqual(split[6], '')
+            self.assertEqual(split[7], dump[0])
+            self.assertEqual(split[8], dump[1])
+            self.assertEqual(split[9], dump[2])
+            self.assertEqual(split[10], dump[3])
 
     def test_static_lockpages(self):
         ni = nfc_parser(read=False)
         self.assertEqual(ni.static_lockpages, None)
+
         ni = nfc_parser()
-        self.assertEqual(ni.static_lockpages, '00 00')
+
+        if ni.tag.type == ni.tag.product:
+            #dummy cards with no writable value (id only)
+            self.assertIsNone(ni.static_lockpages)
+        else:
+            self.assertEqual(ni.static_lockpages, '00 00')
 
     def test_dynamic_lockpages(self):
         ni = nfc_parser(read=False)
@@ -135,28 +156,29 @@ class TestNFCDump(unittest.TestCase):
         #for NXP NTAG215
         MANUFACTURE_ID = 0x04
 
-        b = ni.get_page('00h')
-        self.assertEqual(b[0], MANUFACTURE_ID)
-        self.assertEqual(len(b), 4)
-
-        b = ni.get_page('00')
-        self.assertEqual(b[0], MANUFACTURE_ID)
-        self.assertEqual(len(b), 4)
-
-        b = ni.get_page(0)
-        self.assertEqual(b[0], MANUFACTURE_ID)
-        self.assertEqual(len(b), 4)
+        for i in ['00h', '00', 0]:
+            if ni.tag.type == ni.tag.product:
+                #dummy cards with no writable value (id only)
+                b = ni.get_page(i)
+                self.assertIsNone(b)
+            else:
+                b = ni.get_page(i)
+                self.assertEqual(b[0], MANUFACTURE_ID)
+                self.assertEqual(len(b), 4)
 
     def test_cc_byte(self):
         ni = nfc_parser()
         b = ni.get_page('03h')
-        self.assertEqual(b[2], TAG_SPECS[ni.tag_type].cc)
-        self.assertEqual(len(b), 4)
+        if ni.tag.type == ni.tag.product:
+            self.assertIsNone(b)
+        else:
+            self.assertEqual(b[2], TAG_SPECS[ni.tag_type].cc)
+            self.assertEqual(len(b), 4)
 
     def test_tag_type(self):
         ni = nfc_parser()
         if not ni.signature:
-            self.assertEqual(ni.tag_type, 'Ultralight')
+            self.assertTrue(ni.tag_type, ['Ultralight', 'Type2Tag'])
         else:
             self.assertTrue(ni.tag_type, ['NTAG213', 'NTAG215', 'NTAG216'])
 

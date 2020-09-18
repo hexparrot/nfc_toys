@@ -15,6 +15,7 @@ TAG_SPECS = {
     'NTAG215': Tag_Def(0x3e, 496, 135),
     'NTAG216': Tag_Def(0x6d, 872, 231),
     'Ultralight': Tag_Def(0x06, 64, 16),
+    'Type2Tag': Tag_Def(0x00, 0, 0),
 }
 
 class nfc_parser(object):
@@ -81,6 +82,8 @@ class nfc_parser(object):
             return 'NTAG21{}'.format(self.tag.product[-1])
         elif 'ultralight' in self.tag.product.lower():
             return 'Ultralight'
+        else:
+            return self.tag.type
 
     @property
     def _pprint(self):
@@ -112,9 +115,12 @@ class nfc_parser(object):
         retval = bytearray()
 
         raw = self.raw[0:TAG_SPECS[self.tag_type].pages * 4]
-        for i in range(4):
-            seek = (int(page_addr) * 4) + i
-            retval.append(raw[seek])
+        if not raw: #dummy card id only
+            retval = None
+        else:
+            for i in range(4):
+                seek = (int(page_addr) * 4) + i
+                retval.append(raw[seek])
 
         return retval
 
