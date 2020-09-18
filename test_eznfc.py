@@ -23,8 +23,7 @@ class TestNFCDump(unittest.TestCase):
 
         ni = nfc_parser()
 
-        if ni.tag.type == ni.tag.product:
-            #dummy cards with no writable value (id only)
+        if ni.uid_only: #dummy cards with no writable value (uid only)
             import nfc
             with self.assertRaises(nfc.tag.tt2.Type2TagCommandError):
                 uid_start = ni.raw[0:3].hex() + ni.raw[4:8].hex()
@@ -40,8 +39,7 @@ class TestNFCDump(unittest.TestCase):
 
     def test_get_uid(self):
         ni = nfc_parser()
-        if ni.tag.type == ni.tag.product:
-            #dummy cards with no writable value (id only)
+        if ni.uid_only:
             self.assertEqual(len(ni.uid), 8)
         else:
             self.assertEqual(len(ni.uid), 14)
@@ -85,8 +83,7 @@ class TestNFCDump(unittest.TestCase):
         else:
             self.assertEqual(split[3], 'Signature: {0}'.format('None'))
 
-        if ni.tag.type == ni.tag.product:
-            #dummy cards with no writable value (id only)
+        if ni.uid_only:
             with self.assertRaises(IndexError): #stuff isnt read yet
                 self.assertEqual(split[4], '')
         else:
@@ -106,8 +103,7 @@ class TestNFCDump(unittest.TestCase):
 
         ni = nfc_parser()
 
-        if ni.tag.type == ni.tag.product:
-            #dummy cards with no writable value (id only)
+        if ni.uid_only:
             self.assertIsNone(ni.static_lockpages)
         else:
             self.assertEqual(ni.static_lockpages, '00 00')
@@ -157,7 +153,7 @@ class TestNFCDump(unittest.TestCase):
         MANUFACTURE_ID = 0x04
 
         for i in ['00h', '00', 0]:
-            if ni.tag.type == ni.tag.product:
+            if ni.uid_only:
                 #dummy cards with no writable value (id only)
                 b = ni.get_page(i)
                 self.assertIsNone(b)
@@ -169,7 +165,7 @@ class TestNFCDump(unittest.TestCase):
     def test_cc_byte(self):
         ni = nfc_parser()
         b = ni.get_page('03h')
-        if ni.tag.type == ni.tag.product:
+        if ni.uid_only:
             self.assertIsNone(b)
         else:
             self.assertEqual(b[2], TAG_SPECS[ni.tag_type].cc)
@@ -181,6 +177,16 @@ class TestNFCDump(unittest.TestCase):
             self.assertTrue(ni.tag_type, ['Ultralight', 'Type2Tag'])
         else:
             self.assertTrue(ni.tag_type, ['NTAG213', 'NTAG215', 'NTAG216'])
+
+    def test_uid_only_property(self):
+        ni = nfc_parser(read=False)
+        self.assertIsNone(ni.uid_only)
+
+        ni = nfc_parser()
+        if ni.tag.type == ni.tag.product:
+            self.assertTrue(ni.uid_only)
+        else:
+            self.assertFalse(ni.uid_only)
 
 if __name__ == '__main__':
     unittest.main()

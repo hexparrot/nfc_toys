@@ -86,6 +86,13 @@ class nfc_parser(object):
             return self.tag.type
 
     @property
+    def uid_only(self):
+        try:
+            return self.tag.type == self.tag.product
+        except AttributeError:
+            return None
+
+    @property
     def _pprint(self):
         return ['{}  {}'.format(str(p).zfill(3), self.spaced_hex(d)) for p,d in enumerate(self.pages)]
 
@@ -115,7 +122,7 @@ class nfc_parser(object):
         retval = bytearray()
 
         raw = self.raw[0:TAG_SPECS[self.tag_type].pages * 4]
-        if not raw: #dummy card id only
+        if self.uid_only:
             retval = None
         else:
             for i in range(4):
