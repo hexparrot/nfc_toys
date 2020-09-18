@@ -68,9 +68,11 @@ class TestNFCDump(unittest.TestCase):
         self.assertEqual(split[1], 'Product:')
         self.assertEqual(split[2], 'UID:')
         self.assertEqual(split[3], 'Signature:')
+        self.assertEqual(split[4], 'Static Lock:')
+        self.assertEqual(split[5], 'Dynamic Lock:')
 
         with self.assertRaises(IndexError): #stuff isnt read yet
-            self.assertEqual(split[4], '')
+            self.assertEqual(split[6], '')
 
         ni = nfc_parser()
         str_rep = str(ni)
@@ -78,24 +80,16 @@ class TestNFCDump(unittest.TestCase):
         self.assertEqual(split[0], 'Type:      {0}'.format(ni.tag.type))
         self.assertEqual(split[1], 'Product:   {0}'.format(ni.tag.product))
         self.assertEqual(split[2], 'UID:       {0}'.format(ni.uid))
-        if ni.tag.product.startswith('NXP NTAG'):
-            self.assertEqual(split[3], 'Signature: {0}'.format(ni.signature))
-        else:
-            self.assertEqual(split[3], 'Signature: {0}'.format('None'))
+        self.assertEqual(split[3], 'Signature: {0}'.format(str(ni.signature)))
+        self.assertEqual(split[4], 'Static Lock:  {0}'.format(ni.static_lockpages or str(None)))
+        self.assertEqual(split[5], 'Dynamic Lock: {0}'.format(ni.dynamic_lockpages or str(None)))
 
-        if ni.uid_only:
-            with self.assertRaises(IndexError): #stuff isnt read yet
-                self.assertEqual(split[4], '')
-        else:
-            self.assertEqual(split[4], 'Static Lock:  {0}'.format(ni.static_lockpages))
-            self.assertEqual(split[5], 'Dynamic Lock: {0}'.format(ni.dynamic_lockpages or str(None)))
-
-            dump = ni.tag.dump()
-            self.assertEqual(split[6], '')
-            self.assertEqual(split[7], dump[0])
-            self.assertEqual(split[8], dump[1])
-            self.assertEqual(split[9], dump[2])
-            self.assertEqual(split[10], dump[3])
+        dump = ni.tag.dump()
+        self.assertEqual(split[6], '')
+        self.assertEqual(split[7], dump[0])
+        self.assertEqual(split[8], dump[1])
+        self.assertEqual(split[9], dump[2])
+        self.assertEqual(split[10], dump[3])
 
     def test_static_lockpages(self):
         ni = nfc_parser(read=False)

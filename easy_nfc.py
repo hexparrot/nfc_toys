@@ -40,15 +40,14 @@ class nfc_parser(object):
             retval.append('Product:   ' + self.tag.product)
             retval.append('UID:       ' + self.uid)
             retval.append('Signature: ' + str(self.signature))
-        except AttributeError:
-            return '\n'.join(['Type:','Product:','UID:','Signature:'])
-
-        if len(self.pages) >= 3:
             retval.append('Static Lock:  ' + str(self.static_lockpages))
             retval.append('Dynamic Lock: ' + str(self.dynamic_lockpages))
+        except AttributeError:
+            return '\n'.join(['Type:','Product:','UID:','Signature:',
+                              'Static Lock:', 'Dynamic Lock:'])
 
-            retval.append('')
-            retval.extend(self.tag.dump()[0:4])
+        retval.append('')
+        retval.extend(self.tag.dump()[0:4])
         return '\n'.join(retval)
 
     @property
