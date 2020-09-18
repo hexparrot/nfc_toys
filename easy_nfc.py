@@ -12,7 +12,7 @@ from collections import namedtuple
 Tag_Def = namedtuple('tag_definition', 'cc size pages')
 TAG_SPECS = {
     'NTAG213': Tag_Def(0x12, 128, 32),
-    'NTAG215': Tag_Def(0x3f, 496, 135),
+    'NTAG215': Tag_Def(0x3e, 496, 135),
     'NTAG216': Tag_Def(0x6d, 872, 231),
     'Ultralight': Tag_Def(0x06, 64, 16),
 }

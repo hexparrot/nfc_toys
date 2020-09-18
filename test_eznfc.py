@@ -147,6 +147,12 @@ class TestNFCDump(unittest.TestCase):
         self.assertEqual(b[0], MANUFACTURE_ID)
         self.assertEqual(len(b), 4)
 
+    def test_cc_byte(self):
+        ni = nfc_parser()
+        b = ni.get_page('03h')
+        self.assertEqual(b[2], TAG_SPECS[ni.tag_type].cc)
+        self.assertEqual(len(b), 4)
+
     def test_tag_type(self):
         ni = nfc_parser()
         if not ni.signature:
