@@ -10,7 +10,7 @@ import nfc
 
 TAG_SPECS = {  #defcc size page
     'NTAG213': (0x12, 128, 32),
-    'NTAG215': (0x3f, 496, 136),
+    'NTAG215': (0x3f, 496, 135),
     'NTAG216': (0x6d, 872, 231),
     'Ultralight': (0x06, 64, 16),
 }
@@ -28,6 +28,7 @@ class nfc_parser(object):
             self.target = self.clf.sense(nfc.clf.RemoteTarget(target_type))
             self.tag = nfc.tag.activate(self.clf, self.target)
             self.read()
+            self.raw = nfc.tag.tt2.Type2TagMemoryReader(self.tag)
 
     def __str__(self):
         retval = []
@@ -76,10 +77,8 @@ class nfc_parser(object):
     def tag_type(self):
         if 'NTAG21' in self.tag.product:
             return 'NTAG21{}'.format(self.tag.product[-1])
-        else:
-            for k,v in TAG_SPECS.items():
-                if self.get_page('03h')[2] == v[0]:
-                    return k
+        elif 'ultralight' in self.tag.product.lower():
+            return 'Ultralight'
 
     @property
     def _pprint(self):
@@ -91,13 +90,9 @@ class nfc_parser(object):
     def read(self):
         from itertools import count
 
-        self.raw = bytearray()
-        
         try:
             for i in count(0,4):
                 d = bytearray(self.tag.read(i)) # tag.read() returns 16 bytes
-                [self.raw.append(j) for j in d]
-
                 self.pages.append(d.hex()[0:8])
                 self.pages.append(d.hex()[8:16])
                 self.pages.append(d.hex()[16:24])
@@ -107,8 +102,6 @@ class nfc_parser(object):
 
             if len(self.pages) > num_pages:
                 self.pages = self.pages[0:num_pages]
-            if len(self.raw) > num_pages * 4:
-                self.raw = bytearray(self.raw[0:num_pages * 4])
 
     def get_page(self, page_addr):
         if isinstance(page_addr, str) and page_addr[-1] == 'h':
@@ -116,15 +109,16 @@ class nfc_parser(object):
 
         retval = bytearray()
 
+        raw = self.raw[0:TAG_SPECS[self.tag_type][2] * 4]
         for i in range(4):
             seek = (int(page_addr) * 4) + i
-            retval.append(self.raw[seek])
+            retval.append(raw[seek])
 
         return retval
 
     def dump(self):
         with open('dump.bin', 'wb') as fh:
-            fh.write(self.raw)
+            fh.write(self.raw[0:TAG_SPECS[self.tag_type][2] * 4])
 
     @staticmethod
     def spaced_hex(instr):

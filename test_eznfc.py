@@ -24,7 +24,6 @@ class TestNFCDump(unittest.TestCase):
         ni = nfc_parser()
 
         num_pages = TAG_SPECS[ni.tag_type][2]
-        self.assertEqual(len(ni.raw), 4 * num_pages)
         self.assertEqual(len(ni.pages), num_pages)
 
         uid_start = ni.raw[0:3].hex() + ni.raw[4:8].hex()
@@ -117,7 +116,7 @@ class TestNFCDump(unittest.TestCase):
 
         with open(dumpfile, 'rb') as df:
             raw = df.read()
-        self.assertEqual(bytes(raw), bytes(ni.raw))
+        self.assertEqual(bytes(raw), ni.raw[0:TAG_SPECS[ni.tag_type][2] * 4])
 
     def test_pprint(self):
         ni = nfc_parser(read=False)
