@@ -78,7 +78,7 @@ class nfc_parser(object):
 
     @property
     def tag_type(self):
-        if 'NTAG21' in self.tag.product:
+        if 'NTAG21'.lower() in self.tag.product.lower():
             return 'NTAG21{}'.format(self.tag.product[-1])
         elif 'ultralight' in self.tag.product.lower():
             return 'Ultralight'

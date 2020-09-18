@@ -119,7 +119,7 @@ class TestNFCDump(unittest.TestCase):
 
         if ni.tag.product == 'NXP NTAG215':
             self.assertEqual(ni.dynamic_lockpages, '00 00 00')
-        elif 'Mifare Ultralight (MF01CU1)':
+        else:
             self.assertIsNone(ni.dynamic_lockpages)
 
     def test_dump(self):
