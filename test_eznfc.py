@@ -7,7 +7,7 @@ __email__ = "wdchromium@gmail.com"
 __status__ = "Development"
 
 import unittest
-from easy_nfc import nfc_parser, TAG_SPECS
+from easy_nfc import nfc_parser, TAG_SPECS, OEM_BYTES
 
 class TestNFCDump(unittest.TestCase):
     def setUp(self):
@@ -79,13 +79,13 @@ class TestNFCDump(unittest.TestCase):
         if ni.uid_only:
             self.assertIsNone(ni.static_lockpages)
         else:
-            self.assertEqual(ni.static_lockpages, '00 00')
+            self.assertEqual(ni.static_lockpages, ni.spaced_hex(ni.get_page(2)[2:]))
 
     def test_dynamic_lockpages(self):
         ni = nfc_parser()
 
         if ni.tag.product == 'NXP NTAG215':
-            self.assertEqual(ni.dynamic_lockpages, '00 00 00')
+            self.assertEqual(ni.dynamic_lockpages, ni.spaced_hex(ni.get_page(130)[0:3]))
         else:
             self.assertIsNone(ni.dynamic_lockpages)
 
@@ -152,6 +152,19 @@ class TestNFCDump(unittest.TestCase):
             self.assertTrue(ni.uid_only)
         else:
             self.assertFalse(ni.uid_only)
+
+    def test_oem_bytes(self):
+        ni = nfc_parser()
+
+        try:
+            for loc, d_bytes in OEM_BYTES.get(ni.tag_type):
+                if ni.get_page(loc) != d_bytes:
+                    raise unittest.SkipTest('oem bytes mismatch, skipping')
+                    break # mismatch!
+            else: # matches OK
+                self.assertTrue(ni.oem_bytes)
+        except TypeError:
+            raise unittest.SkipTest('unknown tag type to match, skipping')
 
 if __name__ == '__main__':
     unittest.main()

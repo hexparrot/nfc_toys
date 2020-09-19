@@ -18,6 +18,18 @@ TAG_SPECS = {
     'Type2Tag': Tag_Def(0x00, 0, 0),
 }
 
+OEM_BYTES = { # https://www.nxp.com/docs/en/data-sheet/NTAG213_215_216.pdf
+    'NTAG213': [('03h', bytes([0xe1, 0x10, 0x12, 0x00])),
+                ('04h', bytes([0x01, 0x03, 0xa0, 0x0c])),
+                ('05h', bytes([0x34, 0x03, 0x00, 0xfe]))],
+    'NTAG215': [('03h', bytes([0xe1, 0x10, 0x3e, 0x00])),
+                ('04h', bytes([0x03, 0x00, 0xfe, 0x00])),
+                ('05h', bytes([0x00, 0x00, 0x00, 0x00]))],
+    'NTAG216': [('03h', bytes([0xe1, 0x10, 0x6d, 0x00])),
+                ('04h', bytes([0x03, 0x00, 0xfe, 0x00])),
+                ('05h', bytes([0x00, 0x00, 0x00, 0x00]))],
+}
+
 class nfc_parser(object):
     def __init__(self, read=True,
                        interface='usb',
@@ -62,20 +74,20 @@ class nfc_parser(object):
     @property
     def pages(self):
         num_pages = TAG_SPECS[self.tag_type].pages
-        return [self.raw[i*4:i*4 + 4].hex() for i in range(0, num_pages)]
+        return [self.get_page(i).hex() for i in range(0, num_pages)]
 
     @property
     def static_lockpages(self):
         try:
-            return self.spaced_hex(self.pages[2][4:])
-        except IndexError:
+            return self.spaced_hex(self.get_page(2)[2:])
+        except TypeError:
             return None
 
     @property
     def dynamic_lockpages(self):
         try:
-            return self.spaced_hex(self.pages[129][0:6])
-        except IndexError:
+            return self.spaced_hex(self.get_page(130)[0:3])
+        except TypeError:
             return None
 
     @property
@@ -95,6 +107,16 @@ class nfc_parser(object):
             return None
 
     @property
+    def oem_bytes(self):
+        try:
+            for loc, d_bytes in OEM_BYTES.get(self.tag_type):
+                assert(self.get_page(loc) == d_bytes)
+        except AssertionError:
+            return False
+        else:
+            return True
+
+    @property
     def _pprint(self):
         return ['{}  {}'.format(str(p).zfill(3), self.spaced_hex(d)) for p,d in enumerate(self.pages)]
 
@@ -109,7 +131,10 @@ class nfc_parser(object):
         if self.uid_only:
             return None
         else:
-            return self.raw[page * 4:page * 4 + 4]
+            try:
+                return bytes(self.raw[page * 4:page * 4 + 4])
+            except nfc.tag.tt2.Type2TagCommandError:
+                return None
 
     def dump(self):
         with open('dump.bin', 'wb') as fh:
