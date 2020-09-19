@@ -143,6 +143,15 @@ class nfc_parser(object):
         with open('dump.bin', 'wb') as fh:
             fh.write(self.raw[0:TAG_SPECS[self.tag_type].pages * 4])
 
+    def commit_image(self):
+        with open('dump.bin', 'rb') as fh:
+            page = 0
+            while page < TAG_SPECS[self.tag_type].pages:
+                next_four = fh.read(4)
+                if page not in [0,1,2,130]:
+                    self.tag.write(page, next_four)
+                page += 1
+
     @staticmethod
     def spaced_hex(instr):
         # Receives a str of hexes or bytes and spaces it out -> AA BB CC DD

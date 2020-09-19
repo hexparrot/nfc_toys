@@ -151,6 +151,19 @@ class TestNFCDump(unittest.TestCase):
             reread = ni.get_page(i)
             self.assertEqual(reread, rgen[i])
 
+    @unittest.skip("we do not need to write each run")
+    def test_commit_image(self):
+        ni = nfc_parser()
+        ni.commit_image()
+
+        image = None
+        with open('dump.bin', 'rb') as binary:
+            image = binary.read()
+
+        del ni
+        ni = nfc_parser()
+        self.assertEqual(ni.raw[20:156], image[20:156])
+
     def test_cc_byte(self):
         ni = nfc_parser()
         b = ni.get_page('03h')
