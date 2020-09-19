@@ -117,8 +117,7 @@ class TestNFCDump(unittest.TestCase):
     def test_get_page(self):
         ni = nfc_parser()
 
-        #for NXP NTAG215
-        MANUFACTURE_ID = 0x04
+        MANUFACTURER_ID = 0x04 #for NXP
 
         for i in ['00h', '00', 0]:
             if ni.uid_only:
@@ -127,8 +126,15 @@ class TestNFCDump(unittest.TestCase):
                 self.assertIsNone(b)
             else:
                 b = ni.get_page(i)
-                self.assertEqual(b[0], MANUFACTURE_ID)
+
+                self.assertEqual(b[0], MANUFACTURER_ID)
                 self.assertEqual(len(b), 4)
+
+        if not ni.uid_only:
+            uid = ni.tag.identifier
+            first, second = uid[:3], uid[3:]
+            self.assertEqual(ni.get_page(0)[0:3], first)
+            self.assertEqual(ni.get_page(1), second)
 
     def test_cc_byte(self):
         ni = nfc_parser()
