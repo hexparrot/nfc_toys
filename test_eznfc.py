@@ -136,6 +136,21 @@ class TestNFCDump(unittest.TestCase):
             self.assertEqual(ni.get_page(0)[0:3], first)
             self.assertEqual(ni.get_page(1), second)
 
+    @unittest.skip("this is a simple alias function, and we do not need to write each run")
+    def test_write_page(self):
+        ni = nfc_parser()
+
+        from random import getrandbits
+        rgen = {}
+        reread = []
+        for i in range(5,8):
+            rgen[i] = bytes([getrandbits(8) for i in range(4)])
+            ni.write_page(i, rgen[i])
+
+        for i in range(5,8):
+            reread = ni.get_page(i)
+            self.assertEqual(reread, rgen[i])
+
     def test_cc_byte(self):
         ni = nfc_parser()
         b = ni.get_page('03h')

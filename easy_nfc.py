@@ -136,6 +136,9 @@ class nfc_parser(object):
             except nfc.tag.tt2.Type2TagCommandError:
                 return None
 
+    def write_page(self, page_addr, instr):
+        self.tag.write(page_addr, instr)
+
     def dump(self):
         with open('dump.bin', 'wb') as fh:
             fh.write(self.raw[0:TAG_SPECS[self.tag_type].pages * 4])
