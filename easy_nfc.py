@@ -31,19 +31,34 @@ OEM_BYTES = { # https://www.nxp.com/docs/en/data-sheet/NTAG213_215_216.pdf
 }
 
 class nfc_parser(object):
-    def __init__(self, read=True,
-                       interface='usb',
-                       target_type='106A'):
+    def __init__(self, interface='usb', target_type='106A'):
+        """
+        A high-level interface to quickly read an NFC tag.
+        Heavily integrates 'nfc' module for functionality and hardware support.
+        This class is designed to assist in bulk-read and write operations.
 
-        if read:
-            self.clf = nfc.ContactlessFrontend(interface)
-            self.target = self.clf.sense(nfc.clf.RemoteTarget(target_type))
-            self.tag = nfc.tag.activate(self.clf, self.target)
-            self.raw = nfc.tag.tt2.Type2TagMemoryReader(self.tag)
-        else:
-            self.raw = bytearray()
+        Parameters:
+        interface (str): Defaults to 'usb'; other interfaces are available
+                         but usb is most frequently-used value.
+        target_type (str): Sense cards at 106kbps, type A target by default.
+                           Available: '106A', '106B', '212F'
+
+        Returns: Nothing
+
+        """
+
+        self.clf = nfc.ContactlessFrontend(interface)
+        self.target = self.clf.sense(nfc.clf.RemoteTarget(target_type))
+        self.tag = nfc.tag.activate(self.clf, self.target)
+        self.raw = nfc.tag.tt2.Type2TagMemoryReader(self.tag)
 
     def __str__(self):
+        """
+        Returns a string-representation of the nfc_parser object
+        Provides a big-picture view of the detected tag, along with
+        any information on locks and the first four pages of data
+        """
+
         retval = []
         try:
             retval.append('Type        : ' + self.tag.type)
@@ -62,10 +77,15 @@ class nfc_parser(object):
 
     @property
     def uid(self):
+        """ Returns the tag identifier from nfc module in hex format """
         return self.tag.identifier.hex()
 
     @property
     def signature(self):
+        """
+        Returns the tag signature if one exists.
+        Tag signatures are known to exist in any NTAG21* devices
+        """
         try:
             return self.tag.signature.hex()
         except AttributeError:
@@ -73,11 +93,21 @@ class nfc_parser(object):
 
     @property
     def pages(self):
+        """
+        Returns all the pages of the nfc tag as a list of hexadecimal
+        strings with no space padding.
+        """
+
         num_pages = TAG_SPECS[self.tag_type].pages
         return [self.get_page(i).hex() for i in range(0, num_pages)]
 
     @property
     def static_lockpages(self):
+        """
+        Returns Page 002h, Byte 2,3 of an nfc tag.  This is likely present
+        on all cards that are not uid-only cards (nodata)
+        """
+
         try:
             return self.spaced_hex(self.get_page(2)[2:])
         except TypeError:
@@ -85,6 +115,10 @@ class nfc_parser(object):
 
     @property
     def dynamic_lockpages(self):
+        """
+        Returns Page 130h, Byte 1,2,3 of an nfc tag.
+        This is only present on NTAG215 cards.
+        """
         try:
             return self.spaced_hex(self.get_page(130)[0:3])
         except TypeError:
@@ -92,6 +126,17 @@ class nfc_parser(object):
 
     @property
     def tag_type(self):
+        """
+        Attempts to identify the tag type based on the product name.
+
+        While similarly-named properties exist such as tag.type,
+        this is often insufficent for determining the capabilities
+        and capacities, e.g., "Type2Tag" does not convey pagecounts.
+
+        In fact, if no known product is identified, tag.type is returned
+        which appears to be the default state of UID-only cards.
+        """
+
         if 'NTAG21'.lower() in self.tag.product.lower():
             return 'NTAG21{}'.format(self.tag.product[-1])
         elif 'ultralight' in self.tag.product.lower():
@@ -101,6 +146,11 @@ class nfc_parser(object):
 
     @property
     def uid_only(self):
+        """
+        If tag.type matches the tag.product properties, the card is an
+        UID-only nfc device.
+        """
+
         try:
             return self.tag.type == self.tag.product
         except AttributeError:
@@ -108,6 +158,7 @@ class nfc_parser(object):
 
     @property
     def oem_bytes(self):
+        """ Checks if current nfc tag has factory default values set. """
         try:
             for loc, d_bytes in OEM_BYTES.get(self.tag_type):
                 assert(self.get_page(loc) == d_bytes)
@@ -118,12 +169,27 @@ class nfc_parser(object):
 
     @property
     def _pprint(self):
+        """
+        Generates the list used by the pprint method to show
+        enumerated, spaced hex format of all nfc tag's pages.
+        """
         return ['{}  {}'.format(str(p).zfill(3), self.spaced_hex(d)) for p,d in enumerate(self.pages)]
 
     def pprint(self):
+        """ Prints to stdout a tabularized hexadecimal output of the nfc tag contents """
         print('\n'.join(self._pprint))
 
     def get_page(self, page_addr):
+        """
+        Retreive the contents of a page from the active card's memory.
+
+        Parameters:
+        page_addr (str, int): hexadecimal or decimal value accepted
+
+        Returns: bytes() object of len(4) containing the requested page.
+
+        """
+
         if isinstance(page_addr, str) and page_addr[-1] == 'h':
             page_addr = page_addr.rstrip('h')
         page = int(page_addr)
@@ -137,13 +203,27 @@ class nfc_parser(object):
                 return None
 
     def write_page(self, page_addr, instr):
+        """
+        Alias function for tag.write.
+
+        Parameters:
+        page_addr (int): decimal value for page
+        instr (bytes/bytearray): 4 bytes to be written to card
+
+        Returns: None
+        """
         self.tag.write(page_addr, instr)
 
     def dump(self):
+        """ Dumps current tag to 'dump.bin' file in script directory """
         with open('dump.bin', 'wb') as fh:
             fh.write(self.raw[0:TAG_SPECS[self.tag_type].pages * 4])
 
     def commit_image(self):
+        """
+        Writes 'dump.bin' to current card.
+        TODO: make checks to see if locks are written or confirmations required.
+        """
         with open('dump.bin', 'rb') as fh:
             page = 0
             while page < TAG_SPECS[self.tag_type].pages:
@@ -154,7 +234,7 @@ class nfc_parser(object):
 
     @staticmethod
     def spaced_hex(instr):
-        # Receives a str of hexes or bytes and spaces it out -> AA BB CC DD
+        """ Receives a str of hexes or bytes and spaces it out -> AA BB CC DD """
         if isinstance(instr, bytes):
             instr = instr.hex()
         if len(instr) % 2:
