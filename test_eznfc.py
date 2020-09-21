@@ -153,16 +153,29 @@ class TestNFCDump(unittest.TestCase):
 
     @unittest.skip("we do not need to write each run")
     def test_commit_image(self):
-        ni = nfc_parser()
-        ni.commit_image()
+        lock_data = [#page, #byteoffset, #bytedata
+            ('82h', 3, [0x01, 0x00, 0x0F, 0xBD]), #dynamic lockpages
+            ('02h', 2, [0x0F, 0x48, 0x0F, 0xE0]), #static lockpages
+        ]
 
-        image = None
+        ni = nfc_parser()
+        ni.commit_image(byte_override=lock_data)
+        del ni #to ensure the device is closed and usable below
+
         with open('dump.bin', 'rb') as binary:
             image = binary.read()
 
-        del ni
-        ni = nfc_parser()
-        self.assertEqual(ni.raw[20:156], image[20:156])
+            np = nfc_parser()
+            # 504 bytes of user programmable r/w memory in NTAG215
+            self.assertEqual(np.raw[16:520], image[16:520])
+
+            for page_addr, offset, bytedata in lock_data:
+                page = int(page_addr.rstrip('h'), 16)
+
+                start_byte = (page * 4) + offset
+                end_byte = (page * 4) + offset + (4-offset)
+                self.assertEqual(np.raw[start_byte:end_byte],
+                                 bytearray(bytedata)[offset:])
 
     def test_cc_byte(self):
         ni = nfc_parser()

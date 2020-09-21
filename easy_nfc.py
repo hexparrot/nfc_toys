@@ -192,7 +192,7 @@ class nfc_parser(object):
 
         if isinstance(page_addr, str) and page_addr[-1] == 'h':
             page_addr = page_addr.rstrip('h')
-        page = int(page_addr)
+        page = int(page_addr, 16)
 
         if self.uid_only:
             return None
@@ -219,18 +219,36 @@ class nfc_parser(object):
         with open('dump.bin', 'wb') as fh:
             fh.write(self.raw[0:TAG_SPECS[self.tag_type].pages * 4])
 
-    def commit_image(self):
+    def commit_image(self, byte_override=[]):
         """
         Writes 'dump.bin' to current card.
-        TODO: make checks to see if locks are written or confirmations required.
+
+        Parameters:
+        byte_override (dict): dict containing {(hex_page, offset, [4 bytes])}
+        # ('02h', 2, [0x0F, 0x48, 0x0F, 0xE0]) #static lockpages
+
+        Returns: None
         """
+        PAGES_TO_SKIP = [0,1]
+        PAGES_TO_SKIP.extend([int(p[:-1], 16) for p,o,d in byte_override])
+
         with open('dump.bin', 'rb') as fh:
             page = 0
             while page < TAG_SPECS[self.tag_type].pages:
-                next_four = fh.read(4)
-                if page not in [0,1,2,130]:
-                    self.tag.write(page, next_four)
+                next_four = bytes(fh.read(4))
+                try:
+                    if page not in PAGES_TO_SKIP:
+                        self.tag.write(page, next_four)
+                except nfc.tag.tt2.Type2TagCommandError as ex:
+                    print('{0} error thrown (page {1})'.format(ex, page))
+                    break
+
                 page += 1
+
+        for page_addr, byte_offset, bytedata in byte_override:
+            page = int(page_addr.rstrip('h'), 16)
+
+            self.tag.write(page, bytearray(bytedata))
 
     @staticmethod
     def spaced_hex(instr):
