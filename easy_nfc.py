@@ -109,7 +109,7 @@ class nfc_parser(object):
         """
 
         try:
-            return self.spaced_hex(self.get_page(2)[2:])
+            return self.spaced_hex(self.get_page('02h')[2:])
         except TypeError:
             return None
 
@@ -120,7 +120,7 @@ class nfc_parser(object):
         This is only present on NTAG215 cards.
         """
         try:
-            return self.spaced_hex(self.get_page(130)[0:3])
+            return self.spaced_hex(self.get_page('82h')[0:3])
         except TypeError:
             return None
 
@@ -191,8 +191,9 @@ class nfc_parser(object):
         """
 
         if isinstance(page_addr, str) and page_addr[-1] == 'h':
-            page_addr = page_addr.rstrip('h')
-        page = int(page_addr, 16)
+            page = int(page_addr.rstrip('h'), 16)
+        else:
+            page = int(page_addr)
 
         if self.uid_only:
             return None
