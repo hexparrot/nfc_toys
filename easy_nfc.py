@@ -67,6 +67,12 @@ class nfc_parser(object):
             retval.append('Signature   : ' + str(self.signature))
             retval.append('Static Lock : ' + str(self.static_lockpages))
             retval.append('Dynamic Lock: ' + str(self.dynamic_lockpages))
+
+            retval.append('')
+            char_info = self.check_api(self.character_id)
+            retval.append('Series      : ' + str(char_info['gameSeries']))
+            retval.append('Character   : ' + str(char_info['name']))
+            retval.append('Char ID     : ' + str(char_info['head']))
         except AttributeError:
             return '\n'.join([p.ljust(12, ' ') + ':' for p in 
                 ['Type','Product','UID','Signature', 'Static Lock', 'Dynamic Lock']])

@@ -66,12 +66,18 @@ class TestNFCDump(unittest.TestCase):
         self.assertEqual(split[4], 'Static Lock : {0}'.format(ni.static_lockpages or str(None)))
         self.assertEqual(split[5], 'Dynamic Lock: {0}'.format(ni.dynamic_lockpages or str(None)))
 
-        dump = ni.tag.dump()
+        char_info = ni.check_api(ni.character_id)
         self.assertEqual(split[6], '')
-        self.assertEqual(split[7], dump[0])
-        self.assertEqual(split[8], dump[1])
-        self.assertEqual(split[9], dump[2])
-        self.assertEqual(split[10], dump[3])
+        self.assertEqual(split[7], 'Series      : {0}'.format(char_info['gameSeries']))
+        self.assertEqual(split[8], 'Character   : {0}'.format(char_info['character']))
+        self.assertEqual(split[9], 'Char ID     : {0}'.format(char_info['head']))
+
+        dump = ni.tag.dump()
+        self.assertEqual(split[10], '')
+        self.assertEqual(split[11], dump[0])
+        self.assertEqual(split[12], dump[1])
+        self.assertEqual(split[13], dump[2])
+        self.assertEqual(split[14], dump[3])
 
     def test_static_lockpages(self):
         ni = nfc_parser()
