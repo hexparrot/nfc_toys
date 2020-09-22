@@ -217,6 +217,17 @@ class TestNFCDump(unittest.TestCase):
         except TypeError:
             raise unittest.SkipTest('unknown tag type to match, skipping')
 
+    def test_character_id(self):
+        ni = nfc_parser()
+
+        cid = ni.character_id
+        if ni.uid_only:
+            self.assertIsNone(cid)
+        else:
+            self.assertEqual(len(cid), 8)
+            import string
+            self.assertTrue(all(c in string.hexdigits for c in cid))
+
 if __name__ == '__main__':
     unittest.main()
 

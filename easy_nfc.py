@@ -168,6 +168,14 @@ class nfc_parser(object):
             return True
 
     @property
+    def character_id(self):
+        """ Returns character id bytes (15h, 0-3) """
+        try:
+            return self.get_page('15h').hex()
+        except (TypeError, AttributeError):
+            return None
+
+    @property
     def _pprint(self):
         """
         Generates the list used by the pprint method to show
