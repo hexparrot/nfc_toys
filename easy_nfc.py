@@ -268,6 +268,32 @@ class nfc_parser(object):
             raise RuntimeError('Provided string must be even-numbered in length')
         return ' '.join(instr[i:i+2] for i in range(0, len(instr), 2))
 
+    @staticmethod
+    def check_api(amiibo_id):
+        """
+        Checks amiiboapi.com for full amiibo data of character_id.
+        https://stackabuse.com/using-curl-in-python-with-pycurl/
+        """
+        import pycurl
+        from io import BytesIO
+
+        API_URL = "https://www.amiiboapi.com/api/amiibo/?head={}".format(amiibo_id)
+
+        b_obj = BytesIO()
+        crl = pycurl.Curl()
+
+        crl.setopt(crl.URL, API_URL)
+        crl.setopt(crl.WRITEDATA, b_obj) # Write bytes that are utf-8 encoded
+        crl.perform() # Perform a file transfer
+        crl.close() # End curl session
+
+        get_body = b_obj.getvalue() # Get content stored in the BytesIO object (as bytes)
+        body_str = get_body.decode('utf8') # Decode bytes in get_body and return
+
+        import json
+        json_obj = json.loads(body_str)
+        return json_obj['amiibo'][0]
+
 if __name__ == '__main__':
     ni = nfc_parser()
     print(ni)

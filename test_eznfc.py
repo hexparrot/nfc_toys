@@ -228,6 +228,19 @@ class TestNFCDump(unittest.TestCase):
             import string
             self.assertTrue(all(c in string.hexdigits for c in cid))
 
+    def test_check_api(self):
+        ni = nfc_parser()
+
+        amiibo_id = '01830001'
+        json_obj = ni.check_api(amiibo_id)
+        self.assertEqual(json_obj['amiiboSeries'], 'Animal Crossing')
+        self.assertEqual(json_obj['character'], 'Tom Nook')
+
+        amiibo_id = '021B0001'
+        json_obj = ni.check_api(amiibo_id)
+        self.assertEqual(json_obj['amiiboSeries'], 'Animal Crossing')
+        self.assertEqual(json_obj['character'], 'Tutu')
+
 if __name__ == '__main__':
     unittest.main()
 
