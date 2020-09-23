@@ -69,7 +69,7 @@ class nfc_parser(object):
             retval.append('Dynamic Lock: ' + str(self.dynamic_lockpages))
 
             retval.append('')
-            char_info = self.check_api(self.character_id)
+            char_info = self.check_db(self.character_guid)
             retval.append('Series      : ' + str(char_info['gameSeries']))
             retval.append('Character   : ' + str(char_info['name']))
             retval.append('Char ID     : ' + str(char_info['head']))
@@ -309,44 +309,45 @@ class nfc_parser(object):
         return json_obj['amiibo'][0]
 
     @staticmethod
-    def check_db(amiibo_series, amiibo_id):
+    def check_db(amiibo_id, amiibo_series=None):
         """
         Checks json db from amiiboapi.com github for full amiibo data of character_id.
         https://github.com/N3evin/AmiiboAPI/blob/master/database/amiibo.json
 
         Parameters:
-        amiibo_series (int): 0x00 form preferred
         amiibo_id (str): full 16 char string including variant and form or
                          8 char string of just character type (fuzzy match)
+        amiibo_series (int): 0x00 form preferred
 
-        Returns: {'series': 'Animal Crossing', 'character': 'Bluebear'}
+        Returns: {'gameSeries': 'Animal Crossing', 'name': 'Bluebear'}
         """
         import json
         with open('amiibo.json', 'r') as db:
             json_obj = json.loads(db.read())
 
-            null_match = { 'amiiboSeries': None, 'character': None }
+            null_match = { 'gameSeries': None, 'name': None, 'head': None }
 
-            if amiibo_series is None and amiibo_id:
-                if len(amiibo_id) != 18:
+            if amiibo_series is None and amiibo_id is not None:
+                if len(amiibo_id) == 18:
+                    series = "0x{0}".format(amiibo_id[14:16]).lower()
+                    return {
+                        'gameSeries': json_obj['amiibo_series'][series],
+                        'name': json_obj['amiibos'][amiibo_id]['name'],
+                        'head': amiibo_id[2:10],
+                    }
+                else:
                     return null_match
-
-                series = "0x{0}".format(amiibo_id[14:16]).lower()
-                return {
-                    'amiiboSeries': json_obj['amiibo_series'][series],
-                    'character': json_obj['amiibos'][amiibo_id]['name']
-                }
-            else:
+            elif amiibo_id is not None:
                 cid = "0x{0}".format(amiibo_id).lower()
                 series = "0x{0:#02}".format(amiibo_series).lower()
-
 
                 for k in json_obj['amiibos'].keys():
                     if k.startswith(cid):
                         try:
                             return {
-                                'amiiboSeries': json_obj['amiibo_series'][series],
-                                'character': json_obj['amiibos'][k]['name']
+                                'gameSeries': json_obj['amiibo_series'][series],
+                                'name': json_obj['amiibos'][k]['name'],
+                                'head': amiibo_id,
                             }
                         except (KeyError):
                             return null_match

@@ -66,10 +66,10 @@ class TestNFCDump(unittest.TestCase):
         self.assertEqual(split[4], 'Static Lock : {0}'.format(ni.static_lockpages or str(None)))
         self.assertEqual(split[5], 'Dynamic Lock: {0}'.format(ni.dynamic_lockpages or str(None)))
 
-        char_info = ni.check_api(ni.character_id)
+        char_info = ni.check_db(ni.character_guid)
         self.assertEqual(split[6], '')
         self.assertEqual(split[7], 'Series      : {0}'.format(char_info['gameSeries']))
-        self.assertEqual(split[8], 'Character   : {0}'.format(char_info['character']))
+        self.assertEqual(split[8], 'Character   : {0}'.format(char_info['name']))
         self.assertEqual(split[9], 'Char ID     : {0}'.format(char_info['head']))
 
         dump = ni.tag.dump()
@@ -264,49 +264,85 @@ class TestNFCDump(unittest.TestCase):
         series = 0x05
 
         amiibo_id = '01830001'
-        json_obj = ni.check_db(series, amiibo_id)
-        self.assertEqual(json_obj['amiiboSeries'], 'Animal Crossing')
-        self.assertEqual(json_obj['character'], 'Tom Nook')
+        json_obj = ni.check_db(amiibo_id, series)
+        self.assertEqual(json_obj['gameSeries'], 'Animal Crossing')
+        self.assertEqual(json_obj['name'], 'Tom Nook')
+        self.assertEqual(json_obj['head'], amiibo_id)
 
         amiibo_id = '021b0001' #lower
-        json_obj = ni.check_db(series, amiibo_id)
-        self.assertEqual(json_obj['amiiboSeries'], 'Animal Crossing')
-        self.assertEqual(json_obj['character'], 'Tutu')
+        json_obj = ni.check_db(amiibo_id, series)
+        self.assertEqual(json_obj['gameSeries'], 'Animal Crossing')
+        self.assertEqual(json_obj['name'], 'Tutu')
+        self.assertEqual(json_obj['head'], amiibo_id)
 
         amiibo_id = '021B0001' #upper
-        json_obj = ni.check_db(series, amiibo_id)
-        self.assertEqual(json_obj['amiiboSeries'], 'Animal Crossing')
-        self.assertEqual(json_obj['character'], 'Tutu')
+        json_obj = ni.check_db(amiibo_id, series)
+        self.assertEqual(json_obj['gameSeries'], 'Animal Crossing')
+        self.assertEqual(json_obj['name'], 'Tutu')
+        self.assertEqual(json_obj['head'], amiibo_id)
 
         series = 0x01
         amiibo_id = '00000000'
-        json_obj = ni.check_db(series, amiibo_id)
-        self.assertEqual(json_obj['amiiboSeries'], 'Super Mario Bros.')
-        self.assertEqual(json_obj['character'], 'Mario')
+        json_obj = ni.check_db(amiibo_id, series)
+        self.assertEqual(json_obj['gameSeries'], 'Super Mario Bros.')
+        self.assertEqual(json_obj['name'], 'Mario')
+        self.assertEqual(json_obj['head'], amiibo_id)
 
         series = 0xFF #fake
         amiibo_id = '00000000' #mismatched id to series
-        json_obj = ni.check_db(series, amiibo_id)
-        self.assertIsNone(json_obj['amiiboSeries'])
-        self.assertIsNone(json_obj['character'])
+        json_obj = ni.check_db(amiibo_id, series)
+        self.assertIsNone(json_obj['gameSeries'])
+        self.assertIsNone(json_obj['name'])
+        self.assertIsNone(json_obj['head'])
 
         series = 0x00 #fake
         amiibo_id = 'ffffffff' #fake
-        json_obj = ni.check_db(series, amiibo_id)
-        self.assertIsNone(json_obj['amiiboSeries'])
-        self.assertIsNone(json_obj['character'])
+        json_obj = ni.check_db(amiibo_id, series)
+        self.assertIsNone(json_obj['gameSeries'])
+        self.assertIsNone(json_obj['name'])
+        self.assertIsNone(json_obj['head'])
 
         series = None
         amiibo_id = '00000000'
-        json_obj = ni.check_db(series, amiibo_id)
-        self.assertIsNone(json_obj['amiiboSeries'])
-        self.assertIsNone(json_obj['character'])
+        json_obj = ni.check_db(amiibo_id, series)
+        self.assertIsNone(json_obj['gameSeries'])
+        self.assertIsNone(json_obj['name'])
+        self.assertIsNone(json_obj['head'])
 
         series = None
         amiibo_id = '0x00000000003c0102'
-        json_obj = ni.check_db(series, amiibo_id)
-        self.assertEqual(json_obj['amiiboSeries'], 'Super Mario Bros.')
-        self.assertEqual(json_obj['character'], 'Mario - Gold Edition')
+        json_obj = ni.check_db(amiibo_id, series)
+        self.assertEqual(json_obj['gameSeries'], 'Super Mario Bros.')
+        self.assertEqual(json_obj['name'], 'Mario - Gold Edition')
+        self.assertEqual(json_obj['head'], '00000000')
+
+        series = None
+        amiibo_id = '00000000'
+        json_obj = ni.check_db(amiibo_id)
+        self.assertIsNone(json_obj['gameSeries'])
+        self.assertIsNone(json_obj['name'])
+        self.assertIsNone(json_obj['head'])
+
+        series = None
+        amiibo_id = '0x00000000003c0102'
+        json_obj = ni.check_db(amiibo_id)
+        self.assertEqual(json_obj['gameSeries'], 'Super Mario Bros.')
+        self.assertEqual(json_obj['name'], 'Mario - Gold Edition')
+        self.assertEqual(json_obj['head'], '00000000')
+
+        series = None
+        amiibo_id = None
+        json_obj = ni.check_db(amiibo_id)
+        self.assertIsNone(json_obj['gameSeries'])
+        self.assertIsNone(json_obj['name'])
+        self.assertIsNone(json_obj['head'])
+
+        series = 0x00
+        amiibo_id = None
+        json_obj = ni.check_db(amiibo_id)
+        self.assertIsNone(json_obj['gameSeries'])
+        self.assertIsNone(json_obj['name'])
+        self.assertIsNone(json_obj['head'])
 
 if __name__ == '__main__':
     unittest.main()
