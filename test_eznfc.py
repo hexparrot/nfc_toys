@@ -234,6 +234,18 @@ class TestNFCDump(unittest.TestCase):
             import string
             self.assertTrue(all(c in string.hexdigits for c in cid))
 
+    def test_character_guid(self):
+        ni = nfc_parser()
+
+        cid = ni.character_guid
+        if ni.uid_only:
+            self.assertIsNone(cid)
+        else:
+            self.assertEqual(len(cid), 18)
+            import string
+            self.assertTrue(cid.startswith('0x'))
+            self.assertTrue(all(c in string.hexdigits for c in cid[2:]))
+
     def test_check_api(self):
         ni = nfc_parser()
 
@@ -246,6 +258,43 @@ class TestNFCDump(unittest.TestCase):
         json_obj = ni.check_api(amiibo_id)
         self.assertEqual(json_obj['amiiboSeries'], 'Animal Crossing')
         self.assertEqual(json_obj['character'], 'Tutu')
+
+    def test_check_db(self):
+        ni = nfc_parser()
+        series = 0x05
+
+        amiibo_id = '01830001'
+        json_obj = ni.check_db(series, amiibo_id)
+        self.assertEqual(json_obj['amiiboSeries'], 'Animal Crossing')
+        self.assertEqual(json_obj['character'], 'Tom Nook')
+
+        amiibo_id = '021b0001' #lower
+        json_obj = ni.check_db(series, amiibo_id)
+        self.assertEqual(json_obj['amiiboSeries'], 'Animal Crossing')
+        self.assertEqual(json_obj['character'], 'Tutu')
+
+        amiibo_id = '021B0001' #upper
+        json_obj = ni.check_db(series, amiibo_id)
+        self.assertEqual(json_obj['amiiboSeries'], 'Animal Crossing')
+        self.assertEqual(json_obj['character'], 'Tutu')
+
+        series = 0x01
+        amiibo_id = '00000000'
+        json_obj = ni.check_db(series, amiibo_id)
+        self.assertEqual(json_obj['amiiboSeries'], 'Super Mario Bros.')
+        self.assertEqual(json_obj['character'], 'Mario')
+
+        series = 0xFF #fake
+        amiibo_id = '00000000' #mismatched id to series
+        json_obj = ni.check_db(series, amiibo_id)
+        self.assertIsNone(json_obj['amiiboSeries'])
+        self.assertIsNone(json_obj['character'])
+
+        series = 0x00 #fake
+        amiibo_id = 'ffffffff' #fake
+        json_obj = ni.check_db(series, amiibo_id)
+        self.assertIsNone(json_obj['amiiboSeries'])
+        self.assertIsNone(json_obj['character'])
 
 if __name__ == '__main__':
     unittest.main()

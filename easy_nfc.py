@@ -182,6 +182,14 @@ class nfc_parser(object):
             return None
 
     @property
+    def character_guid(self):
+        """ Returns character id bytes (15h+16h, 0-3) """
+        try:
+            return '0x' + self.get_page('15h').hex() + self.get_page('16h').hex()
+        except (TypeError, AttributeError):
+            return None
+
+    @property
     def _pprint(self):
         """
         Generates the list used by the pprint method to show
@@ -299,6 +307,38 @@ class nfc_parser(object):
         import json
         json_obj = json.loads(body_str)
         return json_obj['amiibo'][0]
+
+    @staticmethod
+    def check_db(amiibo_series, amiibo_id):
+        """
+        Checks json db from amiiboapi.com github for full amiibo data of character_id.
+        https://github.com/N3evin/AmiiboAPI/blob/master/database/amiibo.json
+
+        Parameters:
+        amiibo_series (int): 0x00 form preferred
+        amiibo_id (str): full 16 char string including variant and form
+
+        Returns: {'series': 'Animal Crossing', 'character': 'Bluebear'}
+        """
+        import json
+        with open('amiibo.json', 'r') as db:
+            json_obj = json.loads(db.read())
+            cid = "0x{0}".format(amiibo_id).lower()
+            series = "0x{0:#02}".format(amiibo_series).lower()
+
+            null_match = { 'amiiboSeries': None, 'character': None }
+
+            for k in json_obj['amiibos'].keys():
+                if k.startswith(cid):
+                    try:
+                        return {
+                            'amiiboSeries': json_obj['amiibo_series'][series],
+                            'character': json_obj['amiibos'][k]['name']
+                        }
+                    except (KeyError):
+                        return null_match
+            else:
+                return null_match
 
 if __name__ == '__main__':
     ni = nfc_parser()
