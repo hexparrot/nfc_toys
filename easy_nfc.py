@@ -316,29 +316,41 @@ class nfc_parser(object):
 
         Parameters:
         amiibo_series (int): 0x00 form preferred
-        amiibo_id (str): full 16 char string including variant and form
+        amiibo_id (str): full 16 char string including variant and form or
+                         8 char string of just character type (fuzzy match)
 
         Returns: {'series': 'Animal Crossing', 'character': 'Bluebear'}
         """
         import json
         with open('amiibo.json', 'r') as db:
             json_obj = json.loads(db.read())
-            cid = "0x{0}".format(amiibo_id).lower()
-            series = "0x{0:#02}".format(amiibo_series).lower()
 
             null_match = { 'amiiboSeries': None, 'character': None }
 
-            for k in json_obj['amiibos'].keys():
-                if k.startswith(cid):
-                    try:
-                        return {
-                            'amiiboSeries': json_obj['amiibo_series'][series],
-                            'character': json_obj['amiibos'][k]['name']
-                        }
-                    except (KeyError):
-                        return null_match
+            if amiibo_series is None and amiibo_id:
+                if len(amiibo_id) != 18:
+                    return null_match
+
+                series = "0x{0}".format(amiibo_id[14:16]).lower()
+                return {
+                    'amiiboSeries': json_obj['amiibo_series'][series],
+                    'character': json_obj['amiibos'][amiibo_id]['name']
+                }
             else:
-                return null_match
+                cid = "0x{0}".format(amiibo_id).lower()
+                series = "0x{0:#02}".format(amiibo_series).lower()
+
+
+                for k in json_obj['amiibos'].keys():
+                    if k.startswith(cid):
+                        try:
+                            return {
+                                'amiiboSeries': json_obj['amiibo_series'][series],
+                                'character': json_obj['amiibos'][k]['name']
+                            }
+                        except (KeyError):
+                            return null_match
+        return null_match
 
 if __name__ == '__main__':
     ni = nfc_parser()

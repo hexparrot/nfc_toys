@@ -296,6 +296,18 @@ class TestNFCDump(unittest.TestCase):
         self.assertIsNone(json_obj['amiiboSeries'])
         self.assertIsNone(json_obj['character'])
 
+        series = None
+        amiibo_id = '00000000'
+        json_obj = ni.check_db(series, amiibo_id)
+        self.assertIsNone(json_obj['amiiboSeries'])
+        self.assertIsNone(json_obj['character'])
+
+        series = None
+        amiibo_id = '0x00000000003c0102'
+        json_obj = ni.check_db(series, amiibo_id)
+        self.assertEqual(json_obj['amiiboSeries'], 'Super Mario Bros.')
+        self.assertEqual(json_obj['character'], 'Mario - Gold Edition')
+
 if __name__ == '__main__':
     unittest.main()
 
