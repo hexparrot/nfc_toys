@@ -261,5 +261,36 @@ class nfc_parser(object):
         return ' '.join(instr[i:i+2] for i in range(0, len(instr), 2))
 
 if __name__ == '__main__':
-    ni = nfc_parser()
-    print(ni)
+    import argparse
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dump',
+                        action='store_true',
+                        default=False,
+                        help="dump raw tag data to dump.bin")
+    parser.add_argument('--summary',
+                        action='store_true',
+                        default=True,
+                        help="quick view of tag properties")
+    parser.add_argument('--show',
+                        action='store_true',
+                        default=False,
+                        help="output formatted nfc tag data to stdout")
+    args = parser.parse_args()
+
+    ni = None
+    try:
+        ni = nfc_parser()
+    except AttributeError:
+        # no card on reader, non-blocking app will exit
+        print('no card found on reader, exiting')
+        quit(1)
+    else:
+        if args.dump:
+            ni.dump()
+
+        if args.show:
+            ni.pprint()
+        elif args.summary:
+            print(ni)
+
